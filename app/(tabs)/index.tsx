@@ -1,70 +1,105 @@
-import { Image, StyleSheet, Platform } from 'react-native';
-
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
+import React, { useState } from 'react';
+import { View, TextInput, Button, FlatList, TouchableOpacity } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
-export default function HomeScreen() {
+export default function TodoList() {
+  // Explicitly type the tasks state as string[]
+  const [tasks, setTasks] = useState<string[]>([]);
+  const [taskText, setTaskText] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentTaskIndex, setCurrentTaskIndex] = useState<number | null>(null);
+
+  // Add or update a task
+  const handleAddOrUpdateTask = () => {
+    if (isEditing && currentTaskIndex !== null) {
+      const updatedTasks = tasks.map((task, index) => 
+        index === currentTaskIndex ? taskText : task
+      );
+      setTasks(updatedTasks);
+      setIsEditing(false);
+      setTaskText('');
+    } else {
+      setTasks([...tasks, taskText]);
+      setTaskText('');
+    }
+  };
+
+  // Edit a task
+  const handleEditTask = (index: number) => {
+    setTaskText(tasks[index]);
+    setIsEditing(true);
+    setCurrentTaskIndex(index);
+  };
+
+  // Delete a task
+  const handleDeleteTask = (index: number) => {
+    const updatedTasks = tasks.filter((_, i) => i !== index);
+    setTasks(updatedTasks);
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <ThemedView style={styles.container}>
+      <ThemedText type="title">To-Do List</ThemedText>
+      <TextInput
+        placeholder="Enter a task"
+        value={taskText}
+        onChangeText={setTaskText}
+        style={styles.input}
+      />
+      <Button
+        title={isEditing ? 'Update Task' : 'Add Task'}
+        onPress={handleAddOrUpdateTask}
+      />
+
+      <FlatList
+        data={tasks}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item, index }) => (
+          <View style={styles.taskContainer}>
+            <ThemedText>{item}</ThemedText>
+            <View style={styles.buttonGroup}>
+              <TouchableOpacity onPress={() => handleEditTask(index)}>
+                <ThemedText type="defaultSemiBold" style={styles.button}>Edit</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleDeleteTask(index)}>
+                <ThemedText type="defaultSemiBold" style={styles.button}>Delete</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      />
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    padding: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+  },
+  taskContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  buttonGroup: {
+    flexDirection: 'row',
+    gap: 10,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  button: {
+    color: 'blue',
+    marginLeft: 10,
   },
 });
