@@ -137,20 +137,25 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 25,
   },
   title: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: 'bold',
     color: '#C18652',
-    marginVertical: 10,
+    marginVertical: 5,
+    marginTop: 30,
     textShadowColor: '#4A351D',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
+    lineHeight: 45, 
   },
   subtitle: {
     fontSize: 16,
     color: '#8AA399',
+    lineHeight: 20, 
+  
+    
   },
   input: {
     borderWidth: 2,
