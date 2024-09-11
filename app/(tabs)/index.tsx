@@ -5,13 +5,11 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function TodoList() {
-  // Explicitly type the tasks state as string[]
   const [tasks, setTasks] = useState<string[]>([]);
   const [taskText, setTaskText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [currentTaskIndex, setCurrentTaskIndex] = useState<number | null>(null);
 
-  // Add or update a task
   const handleAddOrUpdateTask = () => {
     if (isEditing && currentTaskIndex !== null) {
       const updatedTasks = tasks.map((task, index) => 
@@ -26,14 +24,12 @@ export default function TodoList() {
     }
   };
 
-  // Edit a task
   const handleEditTask = (index: number) => {
     setTaskText(tasks[index]);
     setIsEditing(true);
     setCurrentTaskIndex(index);
   };
 
-  // Delete a task
   const handleDeleteTask = (index: number) => {
     const updatedTasks = tasks.filter((_, i) => i !== index);
     setTasks(updatedTasks);
@@ -41,7 +37,10 @@ export default function TodoList() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title">To-Do List</ThemedText>
+      <View style={styles.header}>
+        <ThemedText type="title" style={styles.title}>My Task Tracker</ThemedText>
+        <ThemedText type="default" style={styles.subtitle}>Galaw na boss!!</ThemedText>
+      </View>
       <TextInput
         placeholder="Enter a task"
         value={taskText}
@@ -51,6 +50,7 @@ export default function TodoList() {
       <Button
         title={isEditing ? 'Update Task' : 'Add Task'}
         onPress={handleAddOrUpdateTask}
+        color="#4CAF50" // Green color for the button
       />
 
       <FlatList
@@ -61,10 +61,10 @@ export default function TodoList() {
             <ThemedText>{item}</ThemedText>
             <View style={styles.buttonGroup}>
               <TouchableOpacity onPress={() => handleEditTask(index)}>
-                <ThemedText type="defaultSemiBold" style={styles.button}>Edit</ThemedText>
+                <ThemedText type="defaultSemiBold" style={styles.buttonEdit}>Edit</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleDeleteTask(index)}>
-                <ThemedText type="defaultSemiBold" style={styles.button}>Delete</ThemedText>
+                <ThemedText type="defaultSemiBold" style={styles.buttonDelete}>Delete</ThemedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -78,10 +78,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    backgroundColor: 'white', // Light gray background color
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffa700', // Orange color for the title
+    marginVertical: 10,
+    textShadowColor: '#000', // Shadow color
+    textShadowOffset: { width: 0, height: 1 }, // Shadow offset
+    textShadowRadius: 3, // Shadow blur radius
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#4CAF50', // Green color for the subtitle
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
+    borderWidth: 2,
+    borderColor: '#ffa700', // Orange border for the input
     padding: 10,
     marginBottom: 10,
     borderRadius: 5,
@@ -90,16 +108,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 10,
+    padding: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: '#ffa700', // Orange border for task items
   },
   buttonGroup: {
     flexDirection: 'row',
     gap: 10,
   },
-  button: {
-    color: 'blue',
+  buttonEdit: {
+    color: '#4caf50', // Green color for the Edit button
+    marginLeft: 10,
+  },
+  buttonDelete: {
+    color: '#b91d1d', // Orange color for the Delete button
     marginLeft: 10,
   },
 });
