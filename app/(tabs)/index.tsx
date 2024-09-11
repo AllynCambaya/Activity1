@@ -3,29 +3,34 @@ import { View, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-n
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
+interface Task {
+  text: string;
+  completed: boolean;
+}
+
 export default function TodoList() {
-  const [tasks, setTasks] = useState<string[]>([]); // Explicitly typed as an array of strings
-  const [taskText, setTaskText] = useState<string>(''); // Explicitly typed as a string
-  const [isEditing, setIsEditing] = useState<boolean>(false); // Explicitly typed as a boolean
-  const [currentTaskIndex, setCurrentTaskIndex] = useState<number | null>(null); // Explicitly typed as number or null
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [taskText, setTaskText] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentTaskIndex, setCurrentTaskIndex] = useState<number | null>(null);
 
   const handleAddOrUpdateTask = () => {
     if (taskText.trim() === '') return;  // Prevent empty tasks
     if (isEditing && currentTaskIndex !== null) {
       const updatedTasks = tasks.map((task, index) => 
-        index === currentTaskIndex ? taskText : task
+        index === currentTaskIndex ? { ...task, text: taskText } : task
       );
       setTasks(updatedTasks);
       setIsEditing(false);
       setTaskText('');
     } else {
-      setTasks([...tasks, taskText]);
+      setTasks([...tasks, { text: taskText, completed: false }]);
       setTaskText('');
     }
   };
 
   const handleEditTask = (index: number) => {
-    setTaskText(tasks[index]);
+    setTaskText(tasks[index].text);
     setIsEditing(true);
     setCurrentTaskIndex(index);
   };
@@ -35,11 +40,18 @@ export default function TodoList() {
     setTasks(updatedTasks);
   };
 
+  const toggleTaskCompletion = (index: number) => {
+    const updatedTasks = tasks.map((task, i) =>
+      i === index ? { ...task, completed: !task.completed } : task
+    );
+    setTasks(updatedTasks);
+  };
+
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>
-        <ThemedText type="title" style={styles.title}>My Task Tracker</ThemedText>
-        <ThemedText type="default" style={styles.subtitle}>Galaw na boss!!</ThemedText>
+        <ThemedText type="title" style={styles.title}>To-Do List</ThemedText>
+        <ThemedText type="default" style={styles.subtitle}>My Task Tracker</ThemedText>
       </View>
       <TextInput
         placeholder="Enter a task"
@@ -59,13 +71,20 @@ export default function TodoList() {
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item, index }) => (
           <View style={styles.taskContainer}>
-            <ThemedText style={styles.taskContainer}>{item}</ThemedText>
+            <TouchableOpacity onPress={() => toggleTaskCompletion(index)}>
+              <ThemedText style={[
+                styles.taskText,
+                item.completed && styles.completedTaskText, // Apply strikethrough if completed
+              ]}>
+                {item.text}
+              </ThemedText>
+            </TouchableOpacity>
             <View style={styles.buttonGroup}>
               <TouchableOpacity onPress={() => handleEditTask(index)}>
-                <ThemedText style={styles.editButton}>Edit</ThemedText>
+                <ThemedText style={styles.buttonEdit}>Edit</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleDeleteTask(index)}>
-                <ThemedText style={styles.deleteButton}>Delete</ThemedText>
+                <ThemedText style={styles.buttonDelete}>Delete</ThemedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -79,7 +98,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: 'white', // Light gray background color
+    backgroundColor: '#E5DFB6', // Light Beige for background
   },
   header: {
     alignItems: 'center',
@@ -88,35 +107,35 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#ffa700', // Orange color for the title
+    color: '#C18652', // Burnt Orange for title
     marginVertical: 10,
-    textShadowColor: '#000', // Shadow color
-    textShadowOffset: { width: 0, height: 1 }, // Shadow offset
-    textShadowRadius: 3, // Shadow blur radius
+    textShadowColor: '#4A351D', // Dark Brown for shadow
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   subtitle: {
     fontSize: 16,
-    color: '#4CAF50', // Green color for the subtitle
+    color: '#8AA399', // Light Teal for subtitle
   },
   input: {
     borderWidth: 2,
-    borderColor: '#ffa700', // Orange border for the input
+    borderColor: '#C18652', // Burnt Orange for border
     padding: 10,
     marginBottom: 20,
     borderRadius: 5,
     fontSize: 16,
-    color: '#000',
+    color: '#4A351D', // Dark Brown for input text
     backgroundColor: '#f9f9f9',
   },
   button: {
-    backgroundColor: '#000',
+    backgroundColor: '#4A351D', // Dark Brown for button
     paddingVertical: 12,
     borderRadius: 5,
     marginBottom: 20,
     alignItems: 'center',
   },
   buttonText: {
-    color: '#fff',
+    color: '#E5DFB6', // Light Beige for button text
     fontSize: 16,
     fontWeight: '600',
   },
@@ -126,17 +145,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#ffa700', // Orange border for task items
+    borderBottomColor: '#C18652', // Burnt Orange for divider
+  },
+  taskText: {
+    fontSize: 16,
+    color: '#4A351D', // Dark Brown for task text
+  },
+  completedTaskText: {
+    textDecorationLine: 'line-through', // Strikethrough for completed tasks
+    color: '#9E9251', // Olive Green for completed tasks
   },
   buttonGroup: {
     flexDirection: 'row',
   },
-  editButton: {
-    color: '#4caf50', // Green color for the Edit button
+  buttonEdit: {
+    color: '#8AA399', // Light Teal for edit text
     marginLeft: 10,
   },
-  deleteButton: {
-    color: '#b91d1d', // Orange color for the Delete button
+  buttonDelete: {
+    color: '#C18652', // Burnt Orange for delete text
     marginLeft: 10,
   },
 });
