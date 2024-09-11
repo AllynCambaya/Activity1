@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, FlatList, TouchableOpacity } from 'react-native';
-import { StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function TodoList() {
-  const [tasks, setTasks] = useState<string[]>([]);
-  const [taskText, setTaskText] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentTaskIndex, setCurrentTaskIndex] = useState<number | null>(null);
+  const [tasks, setTasks] = useState<string[]>([]); // Explicitly typed as an array of strings
+  const [taskText, setTaskText] = useState<string>(''); // Explicitly typed as a string
+  const [isEditing, setIsEditing] = useState<boolean>(false); // Explicitly typed as a boolean
+  const [currentTaskIndex, setCurrentTaskIndex] = useState<number | null>(null); // Explicitly typed as number or null
 
   const handleAddOrUpdateTask = () => {
+    if (taskText.trim() === '') return;  // Prevent empty tasks
     if (isEditing && currentTaskIndex !== null) {
       const updatedTasks = tasks.map((task, index) => 
         index === currentTaskIndex ? taskText : task
@@ -43,28 +43,29 @@ export default function TodoList() {
       </View>
       <TextInput
         placeholder="Enter a task"
+        placeholderTextColor="#888"
         value={taskText}
         onChangeText={setTaskText}
         style={styles.input}
       />
-      <Button
-        title={isEditing ? 'Update Task' : 'Add Task'}
-        onPress={handleAddOrUpdateTask}
-        color="#4CAF50" // Green color for the button
-      />
+      <TouchableOpacity style={styles.button} onPress={handleAddOrUpdateTask}>
+        <ThemedText style={styles.buttonText}>
+          {isEditing ? 'Update Task' : 'Add Task'}
+        </ThemedText>
+      </TouchableOpacity>
 
       <FlatList
         data={tasks}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item, index }) => (
           <View style={styles.taskContainer}>
-            <ThemedText>{item}</ThemedText>
+            <ThemedText style={styles.taskContainer}>{item}</ThemedText>
             <View style={styles.buttonGroup}>
               <TouchableOpacity onPress={() => handleEditTask(index)}>
-                <ThemedText type="defaultSemiBold" style={styles.buttonEdit}>Edit</ThemedText>
+                <ThemedText style={styles.editButton}>Edit</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleDeleteTask(index)}>
-                <ThemedText type="defaultSemiBold" style={styles.buttonDelete}>Delete</ThemedText>
+                <ThemedText style={styles.deleteButton}>Delete</ThemedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -101,8 +102,23 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#ffa700', // Orange border for the input
     padding: 10,
-    marginBottom: 10,
+    marginBottom: 20,
     borderRadius: 5,
+    fontSize: 16,
+    color: '#000',
+    backgroundColor: '#f9f9f9',
+  },
+  button: {
+    backgroundColor: '#000',
+    paddingVertical: 12,
+    borderRadius: 5,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   taskContainer: {
     flexDirection: 'row',
@@ -114,13 +130,12 @@ const styles = StyleSheet.create({
   },
   buttonGroup: {
     flexDirection: 'row',
-    gap: 10,
   },
-  buttonEdit: {
+  editButton: {
     color: '#4caf50', // Green color for the Edit button
     marginLeft: 10,
   },
-  buttonDelete: {
+  deleteButton: {
     color: '#b91d1d', // Orange color for the Delete button
     marginLeft: 10,
   },
