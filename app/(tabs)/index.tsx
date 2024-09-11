@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   buttonEdit: {
-    color: '#8AA399',
+    color: '#749286',
     marginLeft: 10,
   },
   buttonDelete: {
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   buttonFinish: {
-    color: '#4A351D',
+    color: '#74532e',
     marginLeft: 10,
   },
 });
