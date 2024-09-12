@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, FlatList, StyleSheet, Modal, Alert } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -16,6 +16,24 @@ export default function TodoList() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTaskIndex, setSelectedTaskIndex] = useState<number | null>(null);
   const [originalIndex, setOriginalIndex] = useState<number | null>(null); // Track original index
+  const [error, setError] = useState<string | null>(null); // Error message state
+
+  // useEffect to handle automatic task visibility updates and error message
+  useEffect(() => {
+    if (taskText.trim() === '') {
+      setFilteredTasks(tasks); // Show all tasks when search text is cleared
+      setError(null); // Clear error message when input is cleared
+    } else {
+      const lowerCaseSearchText = taskText.toLowerCase();
+      const matchingTasks = tasks.filter(task => task.text.toLowerCase().includes(lowerCaseSearchText));
+      if (matchingTasks.length === 0) {
+        setError('No tasks match your search criteria.');
+      } else {
+        setError(null); // Clear error message if tasks are found
+      }
+      setFilteredTasks(matchingTasks);
+    }
+  }, [taskText, tasks]); // Depend on taskText and tasks
 
   const handleAddOrUpdateTask = () => {
     if (taskText.trim() === '') return;
@@ -25,27 +43,19 @@ export default function TodoList() {
         index === originalIndex ? { ...task, text: taskText } : task
       );
       setTasks(updatedTasks);
-      setFilteredTasks(updatedTasks.filter(task => task.text.toLowerCase().includes(taskText.toLowerCase())));
+      setFilteredTasks(updatedTasks); // Show all tasks after update
       setIsEditing(false);
+      setTaskText(''); // Clear input field
     } else {
       const newTask = { text: taskText, isCompleted: false };
       setTasks([...tasks, newTask]);
-      setFilteredTasks([...tasks, newTask]);
+      setFilteredTasks([...tasks, newTask]); // Show all tasks after adding
+      setTaskText(''); // Clear input field
     }
-    setTaskText('');
   };
 
   const handleSearchTask = () => {
-    if (taskText.trim() === '') {
-      setFilteredTasks(tasks);
-      return;
-    }
-    const lowerCaseSearchText = taskText.toLowerCase();
-    const matchingTasks = tasks.filter(task => task.text.toLowerCase().includes(lowerCaseSearchText));
-    if (matchingTasks.length === 0) {
-      Alert.alert('No Tasks Found', 'No tasks match your search criteria.');
-    }
-    setFilteredTasks(matchingTasks);
+    // Search logic has been moved to useEffect
   };
 
   const handleTaskPress = (index: number) => {
@@ -66,7 +76,7 @@ export default function TodoList() {
     if (selectedTaskIndex !== null && originalIndex !== null) {
       const updatedTasks = tasks.filter((_, index) => index !== originalIndex);
       setTasks(updatedTasks);
-      setFilteredTasks(updatedTasks.filter(task => task.text.toLowerCase().includes(taskText.toLowerCase())));
+      setFilteredTasks(updatedTasks); // Show all tasks after deleting
       setModalVisible(false);
     }
   };
@@ -77,7 +87,7 @@ export default function TodoList() {
         index === originalIndex ? { ...task, isCompleted: true } : task
       );
       setTasks(updatedTasks);
-      setFilteredTasks(updatedTasks.filter(task => task.text.toLowerCase().includes(taskText.toLowerCase())));
+      setFilteredTasks(updatedTasks); // Show all tasks after marking as completed
       setModalVisible(false);
     }
   };
@@ -88,7 +98,7 @@ export default function TodoList() {
         index === originalIndex ? { ...task, isCompleted: false } : task
       );
       setTasks(updatedTasks);
-      setFilteredTasks(updatedTasks.filter(task => task.text.toLowerCase().includes(taskText.toLowerCase())));
+      setFilteredTasks(updatedTasks); // Show all tasks after marking as unfinished
       setModalVisible(false);
     }
   };
@@ -126,6 +136,13 @@ export default function TodoList() {
         <ThemedText style={styles.labelText}>Your Task</ThemedText>
         <ThemedText style={styles.labelText}>Status</ThemedText>
       </View>
+
+      {/* Display error message if no tasks match search criteria */}
+      {error && (
+        <View style={styles.errorContainer}>
+          <ThemedText style={styles.errorText}>{error}</ThemedText>
+        </View>
+      )}
 
       <FlatList
         data={filteredTasks}
@@ -264,16 +281,17 @@ const styles = StyleSheet.create({
   },
   completedTaskText: {
     textDecorationLine: 'line-through',
+    color: '#8AA399', // Match completed status color
   },
   statusText: {
     fontSize: 16,
     color: '#4A351D',
   },
   completedStatus: {
-    color: '#8AA399', 
+    color: '#8AA399', // Completed status color
   },
   unfinishedStatus: {
-    color: '#4A351D', 
+    color: '#C18652', // Unfinished status color
   },
   modalBackground: {
     flex: 1,
@@ -307,5 +325,18 @@ const styles = StyleSheet.create({
   },
   buttonDelete: {
     color: '#C18652',
+  },
+  errorContainer: {
+    backgroundColor: '#FDECEA',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 15,
+    borderColor: '#C18652',
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#C18652',
+    fontSize: 16,
   },
 });
