@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, FlatList, StyleSheet, Modal } from 'react-native';
+import { View, TextInput, TouchableOpacity, FlatList, StyleSheet, Modal, Alert } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
@@ -15,19 +15,22 @@ export default function TodoList() {
   const [isEditing, setIsEditing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTaskIndex, setSelectedTaskIndex] = useState<number | null>(null);
+  const [originalIndex, setOriginalIndex] = useState<number | null>(null); // Track original index
 
   const handleAddOrUpdateTask = () => {
     if (taskText.trim() === '') return;
-    if (isEditing && selectedTaskIndex !== null) {
+
+    if (isEditing && originalIndex !== null) {
       const updatedTasks = tasks.map((task, index) =>
-        index === selectedTaskIndex ? { ...task, text: taskText } : task
+        index === originalIndex ? { ...task, text: taskText } : task
       );
       setTasks(updatedTasks);
-      setFilteredTasks(updatedTasks);
+      setFilteredTasks(updatedTasks.filter(task => task.text.toLowerCase().includes(taskText.toLowerCase())));
       setIsEditing(false);
     } else {
-      setTasks([...tasks, { text: taskText, isCompleted: false }]);
-      setFilteredTasks([...tasks, { text: taskText, isCompleted: false }]);
+      const newTask = { text: taskText, isCompleted: false };
+      setTasks([...tasks, newTask]);
+      setFilteredTasks([...tasks, newTask]);
     }
     setTaskText('');
   };
@@ -39,49 +42,53 @@ export default function TodoList() {
     }
     const lowerCaseSearchText = taskText.toLowerCase();
     const matchingTasks = tasks.filter(task => task.text.toLowerCase().includes(lowerCaseSearchText));
+    if (matchingTasks.length === 0) {
+      Alert.alert('No Tasks Found', 'No tasks match your search criteria.');
+    }
     setFilteredTasks(matchingTasks);
   };
 
   const handleTaskPress = (index: number) => {
     setSelectedTaskIndex(index);
+    setOriginalIndex(tasks.indexOf(filteredTasks[index])); // Track original index
     setModalVisible(true);
   };
 
   const handleEditTask = () => {
-    if (selectedTaskIndex !== null) {
-      setTaskText(tasks[selectedTaskIndex].text);
+    if (selectedTaskIndex !== null && originalIndex !== null) {
+      setTaskText(tasks[originalIndex].text);
       setIsEditing(true);
       setModalVisible(false);
     }
   };
 
   const handleDeleteTask = () => {
-    if (selectedTaskIndex !== null) {
-      const updatedTasks = tasks.filter((_, index) => index !== selectedTaskIndex);
+    if (selectedTaskIndex !== null && originalIndex !== null) {
+      const updatedTasks = tasks.filter((_, index) => index !== originalIndex);
       setTasks(updatedTasks);
-      setFilteredTasks(updatedTasks);
+      setFilteredTasks(updatedTasks.filter(task => task.text.toLowerCase().includes(taskText.toLowerCase())));
       setModalVisible(false);
     }
   };
 
   const handleMarkAsCompleted = () => {
-    if (selectedTaskIndex !== null) {
+    if (selectedTaskIndex !== null && originalIndex !== null) {
       const updatedTasks = tasks.map((task, index) =>
-        index === selectedTaskIndex ? { ...task, isCompleted: true } : task
+        index === originalIndex ? { ...task, isCompleted: true } : task
       );
       setTasks(updatedTasks);
-      setFilteredTasks(updatedTasks);
+      setFilteredTasks(updatedTasks.filter(task => task.text.toLowerCase().includes(taskText.toLowerCase())));
       setModalVisible(false);
     }
   };
 
   const handleMarkAsUnfinished = () => {
-    if (selectedTaskIndex !== null) {
+    if (selectedTaskIndex !== null && originalIndex !== null) {
       const updatedTasks = tasks.map((task, index) =>
-        index === selectedTaskIndex ? { ...task, isCompleted: false } : task
+        index === originalIndex ? { ...task, isCompleted: false } : task
       );
       setTasks(updatedTasks);
-      setFilteredTasks(updatedTasks);
+      setFilteredTasks(updatedTasks.filter(task => task.text.toLowerCase().includes(taskText.toLowerCase())));
       setModalVisible(false);
     }
   };
@@ -266,7 +273,6 @@ const styles = StyleSheet.create({
     color: '#8AA399', 
   },
   unfinishedStatus: {
-
     color: '#4A351D', 
   },
   modalBackground: {
