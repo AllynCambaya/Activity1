@@ -1,62 +1,93 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, FlatList, StyleSheet, Modal } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 interface Task {
   text: string;
   isCompleted: boolean;
-  isSelected: boolean;
 }
 
 export default function TodoList() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [taskText, setTaskText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedTaskIndex, setSelectedTaskIndex] = useState<number | null>(null);
 
   const handleAddOrUpdateTask = () => {
     if (taskText.trim() === '') return;
-    const selectedTasks = tasks.filter(task => task.isSelected);
-    if (isEditing && selectedTasks.length === 1) {
-      const taskIndex = tasks.findIndex(task => task.isSelected);
+    if (isEditing && selectedTaskIndex !== null) {
       const updatedTasks = tasks.map((task, index) =>
-        index === taskIndex ? { ...task, text: taskText } : task
+        index === selectedTaskIndex ? { ...task, text: taskText } : task
       );
       setTasks(updatedTasks);
+      setFilteredTasks(updatedTasks);
       setIsEditing(false);
-      setTaskText('');
     } else {
-      setTasks([...tasks, { text: taskText, isCompleted: false, isSelected: false }]);
-      setTaskText('');
+      setTasks([...tasks, { text: taskText, isCompleted: false }]);
+      setFilteredTasks([...tasks, { text: taskText, isCompleted: false }]);
     }
+    setTaskText('');
+  };
+
+  const handleSearchTask = () => {
+    if (taskText.trim() === '') {
+      setFilteredTasks(tasks);
+      return;
+    }
+    const lowerCaseSearchText = taskText.toLowerCase();
+    const matchingTasks = tasks.filter(task => task.text.toLowerCase().includes(lowerCaseSearchText));
+    setFilteredTasks(matchingTasks);
+  };
+
+  const handleTaskPress = (index: number) => {
+    setSelectedTaskIndex(index);
+    setModalVisible(true);
   };
 
   const handleEditTask = () => {
-    const selectedTasks = tasks.filter(task => task.isSelected);
-    if (selectedTasks.length === 1) {
-      const taskIndex = tasks.findIndex(task => task.isSelected);
-      setTaskText(tasks[taskIndex].text);
+    if (selectedTaskIndex !== null) {
+      setTaskText(tasks[selectedTaskIndex].text);
       setIsEditing(true);
+      setModalVisible(false);
     }
   };
 
   const handleDeleteTask = () => {
-    const updatedTasks = tasks.filter(task => !task.isSelected);
-    setTasks(updatedTasks);
+    if (selectedTaskIndex !== null) {
+      const updatedTasks = tasks.filter((_, index) => index !== selectedTaskIndex);
+      setTasks(updatedTasks);
+      setFilteredTasks(updatedTasks);
+      setModalVisible(false);
+    }
   };
 
-  const toggleCompleteTask = () => {
-    const updatedTasks = tasks.map(task =>
-      task.isSelected ? { ...task, isCompleted: !task.isCompleted } : task
-    );
-    setTasks(updatedTasks);
+  const handleMarkAsCompleted = () => {
+    if (selectedTaskIndex !== null) {
+      const updatedTasks = tasks.map((task, index) =>
+        index === selectedTaskIndex ? { ...task, isCompleted: true } : task
+      );
+      setTasks(updatedTasks);
+      setFilteredTasks(updatedTasks);
+      setModalVisible(false);
+    }
   };
 
-  const handleCheckboxChange = (index: number) => {
-    const updatedTasks = tasks.map((task, i) =>
-      i === index ? { ...task, isSelected: !task.isSelected } : task
-    );
-    setTasks(updatedTasks);
+  const handleMarkAsUnfinished = () => {
+    if (selectedTaskIndex !== null) {
+      const updatedTasks = tasks.map((task, index) =>
+        index === selectedTaskIndex ? { ...task, isCompleted: false } : task
+      );
+      setTasks(updatedTasks);
+      setFilteredTasks(updatedTasks);
+      setModalVisible(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
   };
 
   return (
@@ -72,11 +103,16 @@ export default function TodoList() {
         onChangeText={setTaskText}
         style={styles.input}
       />
-      <TouchableOpacity style={styles.button} onPress={handleAddOrUpdateTask}>
-        <ThemedText style={styles.buttonText}>
-          {isEditing ? 'Update Task' : 'Add Task'}
-        </ThemedText>
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={handleAddOrUpdateTask}>
+          <ThemedText style={styles.buttonText}>
+            {isEditing ? 'Update Task' : 'Add Task'}
+          </ThemedText>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleSearchTask}>
+          <ThemedText style={styles.buttonText}>Search</ThemedText>
+        </TouchableOpacity>
+      </View>
 
       {/* Labels for Task and Status */}
       <View style={styles.labelsContainer}>
@@ -85,46 +121,58 @@ export default function TodoList() {
       </View>
 
       <FlatList
-        data={tasks}
+        data={filteredTasks}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item, index }) => (
-          <View style={styles.taskContainer}>
-            <TouchableOpacity
-              style={styles.checkbox}
-              onPress={() => handleCheckboxChange(index)}
+          <TouchableOpacity
+            style={styles.taskContainer}
+            onPress={() => handleTaskPress(index)}
+          >
+            <ThemedText
+              style={[
+                styles.taskText,
+                item.isCompleted && styles.completedTaskText,
+              ]}
             >
-              <View style={item.isSelected ? styles.checkboxSelected : styles.checkboxUnselected} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleCheckboxChange(index)} style={styles.taskTextContainer}>
-              <ThemedText
-                style={[
-                  styles.taskText,
-                  item.isCompleted && styles.completedTaskText,
-                ]}
-              >
-                {item.text}
-              </ThemedText>
-              {item.isCompleted && (
-                <ThemedText style={styles.statusText}>Completed</ThemedText>
-              )}
-            </TouchableOpacity>
-          </View>
+              {item.text}
+            </ThemedText>
+            <ThemedText style={[styles.statusText, item.isCompleted ? styles.completedStatus : styles.unfinishedStatus]}>
+              {item.isCompleted ? 'Completed' : 'Unfinished'}
+            </ThemedText>
+          </TouchableOpacity>
         )}
       />
 
-      {tasks.some(task => task.isSelected) && (
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity onPress={handleEditTask}>
-            <ThemedText style={styles.buttonEdit}>Edit</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleDeleteTask}>
-            <ThemedText style={styles.buttonDelete}>Delete</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={toggleCompleteTask}>
-            <ThemedText style={styles.buttonFinish}>Finish</ThemedText>
-          </TouchableOpacity>
+      {/* Modal for Task Options */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={handleCloseModal}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <ThemedText style={styles.modalTitle}>Options for this Task!</ThemedText>
+            {isEditing && (
+              <TouchableOpacity style={styles.modalButton} onPress={handleMarkAsUnfinished}>
+                <ThemedText style={styles.modalButtonText}>Mark as Unfinished</ThemedText>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={styles.modalButton} onPress={handleEditTask}>
+              <ThemedText style={styles.modalButtonText}>Edit Task</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalButton} onPress={handleDeleteTask}>
+              <ThemedText style={[styles.modalButtonText, styles.buttonDelete]}>Delete Task</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalButton} onPress={handleMarkAsCompleted}>
+              <ThemedText style={styles.modalButtonText}>Mark as Completed</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalButton} onPress={handleCloseModal}>
+              <ThemedText style={styles.modalButtonText}>Cancel</ThemedText>
+            </TouchableOpacity>
+          </View>
         </View>
-      )}
+      </Modal>
     </ThemedView>
   );
 }
@@ -148,14 +196,12 @@ const styles = StyleSheet.create({
     textShadowColor: '#4A351D',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
-    lineHeight: 45, 
+    lineHeight: 45,
   },
   subtitle: {
     fontSize: 16,
     color: '#8AA399',
-    lineHeight: 20, 
-  
-    
+    lineHeight: 20,
   },
   input: {
     borderWidth: 2,
@@ -167,12 +213,19 @@ const styles = StyleSheet.create({
     color: '#4A351D',
     backgroundColor: '#f9f9f9',
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   button: {
     backgroundColor: '#4A351D',
     paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 5,
-    marginBottom: 20,
     alignItems: 'center',
+    marginHorizontal: 5,
   },
   buttonText: {
     color: '#E5DFB6',
@@ -183,12 +236,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 10,
-    paddingHorizontal: 10, // Optional padding for a little space on the sides
+    paddingHorizontal: 10,
   },
   labelText: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#4A351D',
+    color: '#C18652',
   },
   taskContainer: {
     flexDirection: 'row',
@@ -197,13 +250,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#C18652',
   },
-  taskTextContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flex: 1,
-    marginLeft: 5,
-  },
   taskText: {
     fontSize: 16,
     color: '#4A351D',
@@ -211,47 +257,49 @@ const styles = StyleSheet.create({
   },
   completedTaskText: {
     textDecorationLine: 'line-through',
-    color: '#8AA399',
   },
   statusText: {
     fontSize: 16,
     color: '#4A351D',
   },
-  checkbox: {
-    width: 20,
-    height: 20,
+  completedStatus: {
+    color: '#8AA399', 
+  },
+  unfinishedStatus: {
+
+    color: '#4A351D', 
+  },
+  modalBackground: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  checkboxUnselected: {
-    width: 16,
-    height: 16,
-    borderWidth: 2,
-    borderColor: '#C18652',
-    backgroundColor: 'transparent',
+  modalContainer: {
+    backgroundColor: '#E5DFB6',
+    borderRadius: 10,
+    padding: 20,
+    width: '80%',
   },
-  checkboxSelected: {
-    width: 16,
-    height: 16,
-    borderWidth: 2,
-    borderColor: '#C18652',
-    backgroundColor: '#C18652',
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4A351D',
+    marginBottom: 15,
+    textAlign: 'center',
   },
-  buttonGroup: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20,
+  modalButton: {
+    backgroundColor: '#4A351D',
+    paddingVertical: 10,
+    borderRadius: 5,
+    marginVertical: 5,
+    alignItems: 'center',
   },
-  buttonEdit: {
-    color: '#749286',
-    marginLeft: 10,
+  modalButtonText: {
+    color: '#E5DFB6',
+    fontSize: 16,
   },
   buttonDelete: {
     color: '#C18652',
-    marginLeft: 10,
-  },
-  buttonFinish: {
-    color: '#74532e',
-    marginLeft: 10,
   },
 });
